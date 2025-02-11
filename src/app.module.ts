@@ -1,15 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
+
+// Auth Module
+import { AuthModule } from './auth/modules/auth.module';
+import { AuthController } from './auth/controller/auth.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // Load env variables globally
-    MongooseModule.forRoot(process.env.MONGO_URI), // Connect to MongoDB
+    MongooseModule.forRoot(process.env.MONGO_URI),
+    AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AuthController],
+  providers: [],
 })
 export class AppModule {}
