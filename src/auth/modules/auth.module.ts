@@ -6,20 +6,28 @@ import { User, UserSchema } from '../schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../strategies/jwt.strategy';
+import { OtpMailService } from '../services/oth.services';
 
 import * as dotenv from 'dotenv';
+import {
+  OtpVerification,
+  OtpVerificationSchema,
+} from '../schemas/otpVerification.schema';
 dotenv.config();
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: OtpVerification.name, schema: OtpVerificationSchema },
+    ]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, OtpMailService],
   controllers: [AuthController],
   exports: [MongooseModule, AuthService],
 })
