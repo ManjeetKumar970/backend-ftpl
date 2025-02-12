@@ -15,6 +15,7 @@ import {
   OtpVerification,
   OtpVerificationDocument,
 } from '../schemas/otpVerification.schema';
+import { SignUpDto } from '../dto/SignUp.dto';
 
 @Injectable()
 export class AuthService {
@@ -32,16 +33,19 @@ export class AuthService {
    * @param password - User's password
    */
   async signUp(
-    email: string,
-    password: string,
+    body: SignUpDto,
     otp: string,
-  ): Promise<{ status: string; access_token: string }> {
-    const existingUser = await this.userModel.findOne({ email }).exec();
+  ): Promise<{ access_token: string }> {
+    const existingUser = await this.userModel
+      .findOne({ email: body.email })
+      .exec();
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
-    const otpData = await this.otpVerificationModel.findOne({ email }).exec();
+    const otpData = await this.otpVerificationModel
+      .findOne({ email: body.email })
+      .exec();
     if (!otpData) {
       throw new NotFoundException(
         'No OTP found for this email. Please request a new OTP.',
@@ -54,17 +58,22 @@ export class AuthService {
       );
     }
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(body.password, 10);
 
     // Create the user
-    const newUser = new this.userModel({ email, password: hashedPassword });
+    const newUser = new this.userModel({
+      email: body.email,
+      password: hashedPassword,
+      name: body.name,
+      phoneNumber: body.phoneNumber,
+    });
     await newUser.save();
 
-    await this.otpVerificationModel.deleteOne({ email }).exec();
+    await this.otpVerificationModel.deleteOne({ email: body.email }).exec();
 
     // Generate JWT token
     const payload = { email: newUser.email, sub: newUser._id };
-    return { status: 'success', access_token: this.jwtService.sign(payload) };
+    return { access_token: this.jwtService.sign(payload) };
   }
 
   /**
@@ -75,7 +84,7 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-  ): Promise<{ status: string; access_token: string }> {
+  ): Promise<{ access_token: string }> {
     const user = await this.userModel.findOne({ email }).exec();
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -86,14 +95,14 @@ export class AuthService {
 
     // Generate JWT token
     const payload = { email: user.email, sub: user._id };
-    return { status: 'success', access_token: this.jwtService.sign(payload) };
+    return { access_token: this.jwtService.sign(payload) };
   }
 
   /**
    * Send OTP method
    * @param email - User's email
    */
-  async userOTPRequest(email: string): Promise<{ status: string }> {
+  async userOTPRequest(email: string): Promise<any> {
     const otp = generateOtp();
     await this.OtpMailService.sendEmail(email, 'FTPL Verification OTP', otp);
 
@@ -104,6 +113,6 @@ export class AuthService {
       { upsert: true, new: true },
     );
 
-    return { status: 'success' };
+    return;
   }
 }

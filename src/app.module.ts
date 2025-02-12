@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 // Auth Module
-import { AuthModule } from './auth/modules/auth.module';
-import { AuthController } from './auth/controller/auth.controller';
+import { AuthModule } from './modules/auth/modules/auth.module';
+import { AuthController } from './modules/auth/controller/auth.controller';
 
 @Module({
   imports: [
@@ -13,6 +15,11 @@ import { AuthController } from './auth/controller/auth.controller';
     AuthModule,
   ],
   controllers: [AuthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+  ],
 })
 export class AppModule {}

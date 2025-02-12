@@ -20,10 +20,10 @@ export class OtpMailService {
   // Reusable method to send an email
   async sendEmail(to: string, subject: string, otp: string) {
     const mailOptions = {
-      from: 'your-email@gmail.com', // Sender address
+      from: 'admin@ftpl.com', // Sender address
       to: to, // Recipient address
       subject: subject, // Subject line
-      text: `Your Eventra otp is ${otp}`, // Plain text body
+      text: `Your FTPL one-time password (OTP) is ${otp}. Please use this OTP to complete your verification. Do not share this code with anyone. It will expire in 2 minutes.`, // Plain text body
     };
 
     try {
