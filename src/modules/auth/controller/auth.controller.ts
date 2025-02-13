@@ -15,7 +15,7 @@ export class AuthController {
 
   @Post('sign-up')
   async signUp(@Body(new ValidationPipe({ whitelist: true })) body: SignUpDto) {
-    return this.authService.signUp(body.email, body.password, body.otp);
+    return this.authService.signUp(body, body.otp);
   }
 
   @Post('verification')
