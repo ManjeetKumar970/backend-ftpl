@@ -11,7 +11,7 @@ export class OtpVerification {
   @Prop({ required: true })
   otp: string;
 
-  @Prop({ default: Date.now, expires: 120 }) // Auto-delete after 60 seconds
+  @Prop({ default: Date.now, expires: 300 }) // Auto-delete after 60 seconds
   createdAt: Date;
 }
 
