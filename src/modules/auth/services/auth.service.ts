@@ -5,16 +5,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserDocument } from '../schemas/user.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
-import { generateOtp } from '../utils/OtpGenerater';
+
+// Utils
+import { encryptedOTP } from '../utils/Otp';
+
+// services
 import { OtpMailService } from './oth.services';
+
+// schema
+import { User, UserDocument } from '../schemas/user.schema';
 import {
   OtpVerification,
   OtpVerificationDocument,
 } from '../schemas/otpVerification.schema';
+
+// DTO
 import { SignUpDto } from '../dto/signUp.dto';
 
 @Injectable()
@@ -37,10 +45,14 @@ export class AuthService {
     otp: string,
   ): Promise<{ access_token: string }> {
     const existingUser = await this.userModel
-      .findOne({ email: body.email })
+      .findOne({
+        $or: [{ email: body.email }, { phoneNumber: body.phoneNumber }],
+      })
       .exec();
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException(
+        'Looks like this email/phone number is already registered. Please log in or use a different one."',
+      );
     }
 
     const otpData = await this.otpVerificationModel
@@ -102,17 +114,21 @@ export class AuthService {
    * Send OTP method
    * @param email - User's email
    */
-  async userOTPRequest(email: string): Promise<any> {
-    const otp = generateOtp();
-    await this.OtpMailService.sendEmail(email, 'FTPL Verification OTP', otp);
+  async userOTPRequest(email: string): Promise<{ otp_token: string }> {
+    const generateOtp = encryptedOTP();
+    await this.OtpMailService.sendEmail(
+      email,
+      'FTPL Verification OTP',
+      generateOtp.otp,
+    );
 
     // Check if OTP record exists and update it; otherwise, create a new one
     await this.otpVerificationModel.findOneAndUpdate(
       { email },
-      { otp },
+      { otp: generateOtp.otp },
       { upsert: true, new: true },
     );
 
-    return;
+    return { otp_token: generateOtp.encryptedOTP };
   }
 }
