@@ -6,7 +6,7 @@ import {
   Matches,
 } from 'class-validator';
 
-export class SignUpDto {
+export class registerDto {
   @IsEmail({}, { message: 'Invalid email format' })
   email: string;
 

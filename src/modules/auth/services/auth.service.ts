@@ -23,7 +23,7 @@ import {
 } from '../schemas/otpVerification.schema';
 
 // DTO
-import { SignUpDto } from '../dto/signUp.dto';
+import { SignUpDto } from '../dto/register.dto';
 
 @Injectable()
 export class AuthService {

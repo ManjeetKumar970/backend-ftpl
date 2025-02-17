@@ -3,8 +3,8 @@ import { AuthService } from '../services/auth.service';
 
 // import DTO
 import { LoginDto } from '../dto/Login.dto';
-import { SignUpDto } from '../dto/SignUp.dto';
 import { OtpDto } from '../dto/otp.dto';
+import { registerDto } from '../dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +16,9 @@ export class AuthController {
   }
 
   @Post('sign-up')
-  async signUp(@Body(new ValidationPipe({ whitelist: true })) body: SignUpDto) {
+  async signUp(
+    @Body(new ValidationPipe({ whitelist: true })) body: registerDto,
+  ) {
     return this.authService.signUp(body, body.otp);
   }
 
