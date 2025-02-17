@@ -15,7 +15,7 @@ import {
   OtpVerification,
   OtpVerificationDocument,
 } from '../schemas/otpVerification.schema';
-import { SignUpDto } from '../dto/SignUp.dto';
+import { SignUpDto } from '../dto/signUp.dto';
 
 @Injectable()
 export class AuthService {
