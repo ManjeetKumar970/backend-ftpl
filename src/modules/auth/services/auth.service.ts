@@ -23,7 +23,7 @@ import {
 } from '../schemas/otpVerification.schema';
 
 // DTO
-import { SignUpDto } from '../dto/register.dto';
+import { registerDto } from '../dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -41,7 +41,7 @@ export class AuthService {
    * @param password - User's password
    */
   async signUp(
-    body: SignUpDto,
+    body: registerDto,
     otp: string,
   ): Promise<{ access_token: string }> {
     const existingUser = await this.userModel
