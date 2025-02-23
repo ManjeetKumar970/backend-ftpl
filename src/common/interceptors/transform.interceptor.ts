@@ -12,7 +12,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, any> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<any> {
     return next.handle().pipe(
       map((data) => ({
-        success: 'success',
+        status: 'success',
         statusCode: context.switchToHttp().getResponse().statusCode,
         data,
         timestamp: new Date().toISOString(),
