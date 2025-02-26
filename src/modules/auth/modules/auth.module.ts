@@ -6,7 +6,7 @@ import { User, UserSchema } from '../schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../strategies/jwt.strategy';
-import { OtpMailService } from '../services/oth.services';
+import { MailService } from 'src/common/services/mail.services';
 
 import * as dotenv from 'dotenv';
 import {
@@ -27,7 +27,7 @@ dotenv.config();
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, OtpMailService],
+  providers: [AuthService, JwtStrategy, MailService],
   controllers: [AuthController],
   exports: [MongooseModule, AuthService],
 })
