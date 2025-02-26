@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
-export class OtpMailService {
+export class MailService {
   private transporter;
 
   constructor() {
@@ -18,20 +18,27 @@ export class OtpMailService {
   }
 
   // Reusable method to send an email
-  async sendEmail(to: string, subject: string, otp: string) {
-    const mailOptions = {
-      from: 'admin@ftpl.com', // Sender address
-      to: to, // Recipient address
-      subject: subject, // Subject line
-      text: `Your FTPL one-time password (OTP) is ${otp}. Please use this OTP to complete your verification. Do not share this code with anyone. It will expire in 2 minutes.`, // Plain text body
+  async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string, // Allow HTML content
+  ): Promise<nodemailer.SentMessageInfo> {
+    const mailOptions: nodemailer.SendMailOptions = {
+      from: `"FTPL Admin"`,
+      to,
+      subject,
+      text, // Plain text fallback
+      html, // Ensure HTML is used for formatting
     };
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
+      console.log(`Email sent to ${to}: ${info.messageId}`);
       return info;
     } catch (error) {
-      console.error('Error sending email:', error);
-      throw error;
+      console.error(`Error sending email to ${to}:`, error);
+      throw new Error('Failed to send email. Please try again.');
     }
   }
 }
