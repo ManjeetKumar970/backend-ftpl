@@ -34,6 +34,5 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(port);
-  console.log(`Server is running on http://localhost:${port}`);
 }
 bootstrap();

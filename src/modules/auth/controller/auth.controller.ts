@@ -20,7 +20,7 @@ export class AuthController {
   async signUp(
     @Body(new ValidationPipe({ whitelist: true })) body: registerDto,
   ) {
-    return this.authService.signUp(body, body.otp);
+    return this.authService.signUp(body);
   }
 
   @Post('verification')

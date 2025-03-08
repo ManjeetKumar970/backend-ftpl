@@ -5,178 +5,148 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
 // Utils
 import { encryptedOTP } from '../../../utils/Otp';
-
-// services
 import { MailService } from 'src/common/services/mail.services';
-
-// schema
-import { User, UserDocument } from '../schemas/user.schema';
-import {
-  OtpVerification,
-  OtpVerificationDocument,
-} from '../schemas/otpVerification.schema';
-
-// DTO
 import { registerDto } from '../dto/register.dto';
 import {
   generateForgotPasswordEmail,
   generateOtpEmail,
 } from '../../../utils/emailMessageText';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(OtpVerification.name)
-    private otpVerificationModel: Model<OtpVerificationDocument>,
-    private readonly MailService: MailService,
-    private jwtService: JwtService,
+    @InjectEntityManager() private readonly entityManager: EntityManager,
+    private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  /**
-   * Signup method - Registers a new user
-   * @param email - User's email
-   * @param password - User's password
-   */
-  async signUp(
-    body: registerDto,
-    otp: string,
-  ): Promise<{ access_token: string }> {
-    const existingUser = await this.userModel
-      .findOne({
-        $or: [{ email: body.email }, { phoneNumber: body.phoneNumber }],
-      })
-      .exec();
-    if (existingUser) {
-      throw new ConflictException(
-        'Looks like this email/phone number is already registered. Please log in or use a different one."',
-      );
+  async signUp(body: registerDto): Promise<{ access_token: string }> {
+    const existingUser = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "email" = $1 OR "phoneNumber" = $2 LIMIT 1`,
+      [body.email, body.phoneNumber],
+    );
+
+    if (existingUser.length > 0) {
+      throw new ConflictException('Email/phone already registered.');
     }
 
-    const otpData = await this.otpVerificationModel
-      .findOne({ email: body.email })
-      .exec();
-    if (!otpData) {
-      throw new NotFoundException(
-        'No OTP found for this email. Please request a new OTP.',
-      );
+    const [otpRecord] = await this.entityManager.query(
+      `SELECT * FROM "otp_verifications" WHERE "email" = $1 LIMIT 1`,
+      [body.email],
+    );
+
+    if (!otpRecord.otp || otpRecord.otp != body.otp) {
+      throw new ConflictException('Invalid or expired OTP.');
     }
 
-    if (otpData.otp !== otp) {
-      throw new ConflictException(
-        'The OTP provided is incorrect or expired. Please request a new OTP.',
-      );
-    }
-    // Hash the password
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
-    // Create the user
-    const newUser = new this.userModel({
-      email: body.email,
-      password: hashedPassword,
-      name: body.name,
-      phoneNumber: body.phoneNumber,
-    });
-    await newUser.save();
+    await this.entityManager.query(
+      `INSERT INTO "user" ("email", "password", "name", "phoneNumber") VALUES ($1, $2, $3, $4)`,
+      [body.email, hashedPassword, body.name, body.phoneNumber],
+    );
 
-    await this.otpVerificationModel.deleteOne({ email: body.email }).exec();
+    await this.entityManager.query(
+      `DELETE FROM "otp_verifications" WHERE email = $1`,
+      [body.email],
+    );
 
-    // Generate JWT token
-    const payload = { email: newUser.email, sub: newUser._id };
+    const payload = { email: body.email };
     return { access_token: this.jwtService.sign(payload) };
   }
 
-  /**
-   * Login method - Authenticates user
-   * @param email - User's email
-   * @param password - User's password
-   */
   async login(
     email: string,
     password: string,
   ): Promise<{ access_token: string }> {
-    const user = await this.userModel.findOne({ email }).exec();
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    // Correct way to compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE email = $1 LIMIT 1`,
+      [email],
+    );
+    if (!user.length || !(await bcrypt.compare(password, user[0].password))) {
       throw new UnauthorizedException('Invalid credentials');
-
-    // Generate JWT token
-    const payload = { email: user.email, sub: user._id };
-    return { access_token: this.jwtService.sign(payload) };
+    }
+    return {
+      access_token: this.jwtService.sign({
+        email: user[0].email,
+        id: user[0].id,
+      }),
+    };
   }
 
-  /**
-   * Send OTP method
-   * @param email - User's email
-   */
   async userOTPRequest(email: string): Promise<{ otp_token: string }> {
-    const generateOtp = encryptedOTP();
-    const emailBody = generateOtpEmail(generateOtp.otp);
-    await this.MailService.sendEmail(
-      email,
-      'FTPL Account Verification - OTP Code',
-      'Use the OTP below to verify your account. Do not share this code with anyone.',
-      emailBody,
+    const [isUserExist] = await this.entityManager.query(
+      'SELECT * FROM "user" WHERE "email" = $1',
+      [email],
     );
 
-    // Check if OTP record exists and update it; otherwise, create a new one
-    await this.otpVerificationModel.findOneAndUpdate(
-      { email },
-      { otp: generateOtp.otp },
-      { upsert: true, new: true },
-    );
-
-    return { otp_token: generateOtp.encryptedOTP };
-  }
-
-  /**
-   * Send forgot password link to email
-   * @param email - User's email
-   */
-  async sendForgotPasswordEmail(email: string): Promise<any> {
-    const user: any = await this.userModel.findOne({ email });
-    if (!user) {
-      throw new UnauthorizedException(
-        'email does not exist. Please check the email and try again.',
-      );
+    if (!isUserExist) {
+      throw new UnauthorizedException('Email already registered.');
     }
 
-    const emailBody = generateForgotPasswordEmail(user?.name, user?._id);
-    await this.MailService.sendEmail(
+    const generatedOtp = encryptedOTP();
+    await this.mailService.sendEmail(
       email,
-      'Password Reset Request',
-      'We received a request to reset your password. Click the link below to proceed.',
-      emailBody,
+      'FTPL Account Verification - OTP Code',
+      'Use the OTP below to verify your account.',
+      generateOtpEmail(generatedOtp.otp),
     );
 
-    return;
+    await this.entityManager.query(
+      `INSERT INTO "otp_verifications" ("email", "otp") VALUES ($1, $2) 
+       ON CONFLICT ("email") DO UPDATE SET otp = EXCLUDED.otp`,
+      [email, generatedOtp.otp],
+    );
+    return { otp_token: generatedOtp.encryptedOTP };
   }
 
-  /**
-   * change password
-   * @param id - User's id
-   * @param newPassword - User's newPassword
-   */
+  async sendForgotPasswordEmail(email: string): Promise<void> {
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "email" = $1 LIMIT 1`,
+      [email],
+    );
+    if (!user.length) {
+      throw new UnauthorizedException('Email does not exist.');
+    }
+    await this.mailService.sendEmail(
+      email,
+      'Password Reset Request',
+      'Click the link below to reset your password.',
+      generateForgotPasswordEmail(user[0].name, user[0].id),
+    );
+  }
+
   async changePassword(
     id: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.userModel.findByIdAndUpdate(
-      id,
-      { password: hashedPassword },
-      { new: true },
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "id" = $1 LIMIT 1`,
+      [id],
     );
-    return { message: 'password change successfully' };
+    if (!user.length) {
+      throw new NotFoundException('User not found');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.entityManager.query(
+      `UPDATE "user" SET "password" = $1 WHERE "id" = $2`,
+      [hashedPassword, id],
+    );
+    return { message: 'Password changed successfully' };
+  }
+
+  // CRON Job to delete OTPs older than 2 minutes
+  @Cron('*/2 * * * *') // Runs every 2 minutes
+  async deleteExpiredOtps() {
+    await this.entityManager.query(
+      `DELETE FROM "otp_verifications" WHERE NOW() > "created_at" + INTERVAL '2 minutes'`,
+    );
   }
 }
