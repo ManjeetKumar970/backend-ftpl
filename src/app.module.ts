@@ -3,20 +3,18 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AuthModule } from './modules/auth/modules/auth.module';
+import { AuthController } from './modules/auth/controller/auth.controller';
+import { User } from './modules/auth/entities/user.entity';
+import { OtpVerification } from './modules/auth/entities/otpVerification.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // Load ConfigModule first
 ConfigModule.forRoot({ isGlobal: true });
 
-console.log('Environment Variables Loaded:');
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_PORT:', process.env.DB_PORT);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_PASS:', process.env.DB_PASS);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('ENVIRONMENT:', process.env.ENVIRONMENT);
-
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -31,10 +29,13 @@ console.log('ENVIRONMENT:', process.env.ENVIRONMENT);
       synchronize: true,
       autoLoadEntities: true,
       logging: true, // Enable logging to check connection
+      entities: [User, OtpVerification],
     }),
+    AuthModule,
   ],
   controllers: [],
   providers: [
+    AuthController,
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
