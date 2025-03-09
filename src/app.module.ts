@@ -25,6 +25,7 @@ ConfigModule.forRoot({ isGlobal: true });
         rejectUnauthorized: false,
       },
       synchronize: true,
+      logging: true,
       autoLoadEntities: true,
       entities: [User, OtpVerification],
     }),
