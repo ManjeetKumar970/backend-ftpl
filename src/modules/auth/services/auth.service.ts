@@ -17,7 +17,6 @@ import {
   generateForgotPasswordEmail,
   generateOtpEmail,
 } from '../../../utils/emailMessageText';
-import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class AuthService {
@@ -140,13 +139,5 @@ export class AuthService {
       [hashedPassword, id],
     );
     return { message: 'Password changed successfully' };
-  }
-
-  // CRON Job to delete OTPs older than 2 minutes
-  @Cron('*/2 * * * *') // Runs every 2 minutes
-  async deleteExpiredOtps() {
-    await this.entityManager.query(
-      `DELETE FROM "otp_verifications" WHERE NOW() > "created_at" + INTERVAL '2 minutes'`,
-    );
   }
 }
