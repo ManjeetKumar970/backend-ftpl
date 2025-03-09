@@ -12,13 +12,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 // Load ConfigModule first
 ConfigModule.forRoot({ isGlobal: true });
 
-console.log('Database Configuration:');
-console.log('Host:', process.env.DB_HOST);
-console.log('Port:', process.env.DB_PORT);
-console.log('Username:', process.env.DB_USER);
-console.log('Password:', process.env.DB_PASS);
-console.log('Database:', process.env.DB_NAME);
-
 @Module({
   imports: [
     ScheduleModule.forRoot(),
