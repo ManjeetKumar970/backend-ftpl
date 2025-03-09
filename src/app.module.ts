@@ -7,14 +7,12 @@ import { AuthModule } from './modules/auth/modules/auth.module';
 import { AuthController } from './modules/auth/controller/auth.controller';
 import { User } from './modules/auth/entities/user.entity';
 import { OtpVerification } from './modules/auth/entities/otpVerification.entity';
-import { ScheduleModule } from '@nestjs/schedule';
 
 // Load ConfigModule first
 ConfigModule.forRoot({ isGlobal: true });
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
