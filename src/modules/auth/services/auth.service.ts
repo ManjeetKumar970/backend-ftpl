@@ -86,7 +86,7 @@ export class AuthService {
       [email],
     );
 
-    if (!isUserExist) {
+    if (isUserExist) {
       throw new UnauthorizedException('Email already registered.');
     }
 
