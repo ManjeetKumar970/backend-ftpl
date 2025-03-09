@@ -103,6 +103,18 @@ export class AuthService {
        ON CONFLICT ("email") DO UPDATE SET otp = EXCLUDED.otp`,
       [email, generatedOtp.otp],
     );
+
+    // Schedule deletion after 2 minutes
+    setTimeout(
+      async () => {
+        await this.entityManager.query(
+          `DELETE FROM "otp_verifications" WHERE "email" = $1 AND created_at <= NOW() - INTERVAL '2 minutes'`,
+          [email],
+        );
+      },
+      Number(process.env.OTP_DELETE_TIME_IN_MIN) * 60000,
+    );
+
     return { otp_token: generatedOtp.encryptedOTP };
   }
 
