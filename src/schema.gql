@@ -12,12 +12,18 @@ type BannerResponseDTO {
   btn_link: String
 }
 
+type BannerResponseWrapperDTO {
+  status: String!
+  message: String
+  data: BannerResponseDTO
+}
+
 type Query {
   healthCheck: String!
 }
 
 type Mutation {
-  createBanner(input: BannerCreateDTO!): BannerResponseDTO!
+  createBanner(input: BannerCreateDTO!): BannerResponseWrapperDTO!
 }
 
 input BannerCreateDTO {

@@ -1,9 +1,9 @@
 import { Resolver, Mutation, Args, Query } from '@nestjs/graphql';
-import { BannerResponseDTO } from '../dto/banner-response.dto';
+import { BannerResponseWrapperDTO } from '../dto/banner-response.dto';
 import { BannerService } from '../services/banner.services';
 import { BannerCreateDTO } from '../dto/banner.dto';
 
-@Resolver(() => BannerResponseDTO)
+@Resolver()
 export class BannerResolver {
   constructor(private readonly bannerService: BannerService) {}
 
@@ -12,11 +12,22 @@ export class BannerResolver {
     return 'GraphQL is working!';
   }
 
-  @Mutation(() => BannerResponseDTO)
+  @Mutation(() => BannerResponseWrapperDTO)
   async createBanner(
     @Args('input') input: BannerCreateDTO,
-  ): Promise<BannerResponseDTO> {
-    const response = await this.bannerService.createBanner(input);
-    return response;
+  ): Promise<BannerResponseWrapperDTO> {
+    try {
+      const response = await this.bannerService.createBanner(input);
+      return {
+        status: 'success',
+        message: 'Banner created successfully',
+        data: response,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 }
