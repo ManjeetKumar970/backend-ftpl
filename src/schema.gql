@@ -1,0 +1,30 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type BannerResponseDTO {
+  id: ID
+  user_id: String
+  name: String
+  image_link: String
+  head_description: String
+  sub_description: String
+  btn_link: String
+}
+
+type Query {
+  healthCheck: String!
+}
+
+type Mutation {
+  createBanner(input: BannerCreateDTO!): BannerResponseDTO!
+}
+
+input BannerCreateDTO {
+  user_id: String!
+  name: String!
+  image_link: String!
+  head_description: String!
+  sub_description: String!
+  btn_link: String!
+}

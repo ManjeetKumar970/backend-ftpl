@@ -1,19 +1,24 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AuthModule } from './modules/auth/modules/auth.module';
-import { AuthController } from './modules/auth/controller/auth.controller';
 import { User } from './modules/auth/entities/user.entity';
 import { OtpVerification } from './modules/auth/entities/otpVerification.entity';
-
-// Load ConfigModule first
-ConfigModule.forRoot({ isGlobal: true });
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { BannerModule } from './modules/banner/module/banner.module';
+import { join } from 'path';
+import { Banner } from './modules/banner/entities/banner.entities';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -25,19 +30,17 @@ ConfigModule.forRoot({ isGlobal: true });
         rejectUnauthorized: false,
       },
       synchronize: true,
-      logging: true,
       autoLoadEntities: true,
-      entities: [User, OtpVerification],
+      entities: [User, OtpVerification, Banner],
     }),
     AuthModule,
+    BannerModule,
   ],
-  controllers: [],
   providers: [
-    AuthController,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: TransformInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: TransformInterceptor,
+    // },
   ],
 })
 export class AppModule {}
