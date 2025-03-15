@@ -152,4 +152,39 @@ export class AuthService {
     );
     return { message: 'Password changed successfully' };
   }
+
+  async createRootUsers(body: registerDto): Promise<{ access_token: string }> {
+    const existingUser = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "email" = $1 OR "phoneNumber" = $2 LIMIT 1`,
+      [body.email, body.phoneNumber],
+    );
+
+    if (existingUser.length > 0) {
+      throw new ConflictException('Email/phone already registered.');
+    }
+
+    const [otpRecord] = await this.entityManager.query(
+      `SELECT * FROM "otp_verifications" WHERE "email" = $1 LIMIT 1`,
+      [body.email],
+    );
+
+    if (!otpRecord.otp || otpRecord.otp != body.otp) {
+      throw new ConflictException('Invalid or expired OTP.');
+    }
+
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+
+    await this.entityManager.query(
+      `INSERT INTO "user" ("email", "password", "name", "phoneNumber", "user_role") VALUES ($1, $2, $3, $4, $5)`,
+      [body.email, hashedPassword, body.name, body.phoneNumber, 'Admin'],
+    );
+
+    await this.entityManager.query(
+      `DELETE FROM "otp_verifications" WHERE email = $1`,
+      [body.email],
+    );
+
+    const payload = { email: body.email };
+    return { access_token: this.jwtService.sign(payload) };
+  }
 }

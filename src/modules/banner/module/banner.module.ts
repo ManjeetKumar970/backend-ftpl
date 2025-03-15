@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { BannerService } from '../services/banner.services';
-import { BannerResolver } from '../resolver/banner.resolver';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Banner } from '../entities/banner.entities';
+import { BannerService } from '../services/banner.service';
+import { BannerController } from '../controller/banner.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Banner])],
-  providers: [BannerService, BannerResolver],
+  controllers: [BannerController],
+  providers: [BannerService],
   exports: [BannerService],
 })
 export class BannerModule {}
