@@ -45,4 +45,9 @@ export class AuthController {
   ) {
     return this.authService.changePassword(id, body.newPassword);
   }
+
+  @Post('sign-up/admin')
+  async createRootUsers(@Param('id') id: string, @Body() body: registerDto) {
+    return this.authService.createRootUsers(body);
+  }
 }
