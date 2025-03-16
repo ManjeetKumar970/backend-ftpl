@@ -35,6 +35,5 @@ import { BannerController } from './modules/banner/controller/banner.controller'
       useClass: TransformInterceptor,
     },
   ],
-  controllers: [BannerController],
 })
 export class AppModule {}

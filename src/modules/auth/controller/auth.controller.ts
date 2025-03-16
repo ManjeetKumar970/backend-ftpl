@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth.service';
 // import DTO
 import { LoginDto } from '../dto/Login.dto';
 import { OtpDto } from '../dto/otp.dto';
-import { registerDto } from '../dto/register.dto';
+import { adminRegisterDto, registerDto } from '../dto/register.dto';
 import { sendForgotPasswordEmailDto } from '../dto/sendForgotPassword.dot';
 
 @Controller('auth')
@@ -47,7 +47,15 @@ export class AuthController {
   }
 
   @Post('sign-up/admin')
-  async createRootUsers(@Param('id') id: string, @Body() body: registerDto) {
-    return this.authService.createRootUsers(body);
+  async createRootUsers(
+    @Param('id') id: string,
+    @Body() body: adminRegisterDto,
+  ) {
+    return this.authService.adminSignUp(body);
+  }
+
+  @Post('login/admin')
+  async LoginRootUsers(@Param('id') id: string, @Body() body: LoginDto) {
+    return this.authService.AdminLogin(body.email, body.password);
   }
 }

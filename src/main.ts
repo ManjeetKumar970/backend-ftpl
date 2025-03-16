@@ -4,7 +4,7 @@ import * as morgan from 'morgan';
 import * as dotenv from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
-import { GqlHttpExceptionFilter } from './common/exceptions/http-exception.filter';
+import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
 
 // Load environment variables
 dotenv.config();
@@ -31,7 +31,7 @@ async function bootstrap() {
   app.use(new RateLimitMiddleware().use);
 
   // Apply the HttpExceptionFilter globally
-  app.useGlobalFilters(new GqlHttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(port);
 }
