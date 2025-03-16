@@ -12,11 +12,12 @@ import * as bcrypt from 'bcryptjs';
 // Utils
 import { encryptedOTP } from '../../../utils/Otp';
 import { MailService } from 'src/common/services/mail.services';
-import { registerDto } from '../dto/register.dto';
+import { adminRegisterDto, registerDto } from '../dto/register.dto';
 import {
   generateForgotPasswordEmail,
   generateOtpEmail,
 } from '../../../utils/emailMessageText';
+import { Role } from 'src/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -61,13 +62,55 @@ export class AuthService {
     return { access_token: this.jwtService.sign(payload) };
   }
 
+  async adminSignUp(body: adminRegisterDto): Promise<{ access_token: string }> {
+    const [isUserExist] = await this.entityManager.query(
+      'SELECT * FROM "user" WHERE "email" = $1 OR "phoneNumber" = $2',
+      [body?.email, body?.phoneNumber],
+    );
+
+    if (isUserExist) {
+      throw new UnauthorizedException(
+        'Email or Phone number already registered.',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+
+    await this.entityManager.query(
+      `INSERT INTO "user" ("email", "password", "name", "phoneNumber", "user_role") VALUES ($1, $2, $3, $4, $5)`,
+      [body.email, hashedPassword, body.name, body.phoneNumber, Role.ADMIN],
+    );
+
+    const payload = { email: body.email };
+    return { access_token: this.jwtService.sign(payload) };
+  }
+
   async login(
     email: string,
     password: string,
   ): Promise<{ access_token: string }> {
     const user = await this.entityManager.query(
-      `SELECT * FROM "user" WHERE email = $1 LIMIT 1`,
-      [email],
+      `SELECT * FROM "user" WHERE email = $1 AND user_role = $2 LIMIT 1`,
+      [email, Role.USER],
+    );
+    if (!user.length || !(await bcrypt.compare(password, user[0].password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return {
+      access_token: this.jwtService.sign({
+        email: user[0].email,
+        id: user[0].id,
+      }),
+    };
+  }
+
+  async AdminLogin(
+    email: string,
+    password: string,
+  ): Promise<{ access_token: string }> {
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE email = $1 AND user_role = $2 LIMIT 1`,
+      [email, Role.ADMIN],
     );
     if (!user.length || !(await bcrypt.compare(password, user[0].password))) {
       throw new UnauthorizedException('Invalid credentials');
@@ -151,40 +194,5 @@ export class AuthService {
       [hashedPassword, id],
     );
     return { message: 'Password changed successfully' };
-  }
-
-  async createRootUsers(body: registerDto): Promise<{ access_token: string }> {
-    const existingUser = await this.entityManager.query(
-      `SELECT * FROM "user" WHERE "email" = $1 OR "phoneNumber" = $2 LIMIT 1`,
-      [body.email, body.phoneNumber],
-    );
-
-    if (existingUser.length > 0) {
-      throw new ConflictException('Email/phone already registered.');
-    }
-
-    const [otpRecord] = await this.entityManager.query(
-      `SELECT * FROM "otp_verifications" WHERE "email" = $1 LIMIT 1`,
-      [body.email],
-    );
-
-    if (!otpRecord.otp || otpRecord.otp != body.otp) {
-      throw new ConflictException('Invalid or expired OTP.');
-    }
-
-    const hashedPassword = await bcrypt.hash(body.password, 10);
-
-    await this.entityManager.query(
-      `INSERT INTO "user" ("email", "password", "name", "phoneNumber", "user_role") VALUES ($1, $2, $3, $4, $5)`,
-      [body.email, hashedPassword, body.name, body.phoneNumber, 'Admin'],
-    );
-
-    await this.entityManager.query(
-      `DELETE FROM "otp_verifications" WHERE email = $1`,
-      [body.email],
-    );
-
-    const payload = { email: body.email };
-    return { access_token: this.jwtService.sign(payload) };
   }
 }

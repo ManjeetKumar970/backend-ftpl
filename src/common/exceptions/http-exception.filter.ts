@@ -5,57 +5,60 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { GraphQLError } from 'graphql';
 import { Response } from 'express';
 
 @Catch(HttpException)
-export class GqlHttpExceptionFilter implements ExceptionFilter {
+export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
-    const ctxType = host.getType<'http' | 'rpc' | 'ws'>(); // Get the request type
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest();
 
-    // Extract error information
-    const statusCode =
+    // Get the HTTP status code
+    const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
+    // Extract exception response
     const exceptionResponse = exception.getResponse();
-    let message = 'Something went wrong, please try again later';
+    let errorMessage = 'Something went wrong';
+    let errorType = 'Error';
 
     if (typeof exceptionResponse === 'string') {
-      message = exceptionResponse;
+      errorMessage = exceptionResponse;
     } else if (
       typeof exceptionResponse === 'object' &&
-      'message' in exceptionResponse
+      exceptionResponse !== null
     ) {
-      message = Array.isArray(exceptionResponse.message)
-        ? exceptionResponse.message[0]
-        : exceptionResponse.message;
+      const responseObj = exceptionResponse as {
+        message?: string | string[];
+        error?: string;
+      };
+
+      // Extract message: If it's an array, take the first element; otherwise, use it as a string
+      if (
+        Array.isArray(responseObj.message) &&
+        responseObj.message.length > 0
+      ) {
+        errorMessage = responseObj.message[0];
+      } else if (typeof responseObj.message === 'string') {
+        errorMessage = responseObj.message;
+      }
+
+      // Extract error type if available
+      if (responseObj.error) {
+        errorType = responseObj.error;
+      }
     }
 
-    if (ctxType === 'http') {
-      // ✅ Handle REST API error response
-      const ctx = host.switchToHttp();
-      const response = ctx.getResponse<Response>();
-
-      response.status(statusCode).json({
-        status: 'error',
-        statusCode,
-        message,
-        error: exception.name || 'Error',
-        timestamp: new Date().toISOString(),
-        path: ctx.getRequest().url,
-      });
-    } else {
-      // ✅ Handle GraphQL error response
-      return new GraphQLError(message, {
-        extensions: {
-          status: 'error',
-          statusCode,
-          error: exception.name,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
+    // Send JSON response
+    response.status(status).json({
+      error: errorType,
+      statusCode: status,
+      message: errorMessage,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    });
   }
 }

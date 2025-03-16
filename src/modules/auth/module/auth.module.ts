@@ -7,6 +7,7 @@ import { JwtStrategy } from '../strategies/jwt.strategy';
 import { MailService } from 'src/common/services/mail.services';
 
 import * as dotenv from 'dotenv';
+import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
 dotenv.config();
 
 @Module({
@@ -14,11 +15,11 @@ dotenv.config();
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '30d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, MailService],
+  providers: [AuthService, JwtStrategy, MailService, JwtAdminAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtAdminAuthGuard],
 })
 export class AuthModule {}

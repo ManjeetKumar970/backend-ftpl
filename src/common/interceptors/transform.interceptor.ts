@@ -41,7 +41,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, any> {
 
         // Construct the response object
         const response: any = {
-          status: true,
+          status: 'success',
           statusCode,
           message,
           timestamp: new Date().toISOString(),

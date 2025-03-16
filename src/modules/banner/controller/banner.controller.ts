@@ -5,12 +5,15 @@ import {
   Get,
   Param,
   Post,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { BannerService } from '../services/banner.service';
 import { CreateBannerDto } from '../dto/banner.dto';
+import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
 
 @Controller('banner')
+@UseGuards(JwtAdminAuthGuard)
 export class BannerController {
   constructor(private readonly bannerService: BannerService) {}
 
