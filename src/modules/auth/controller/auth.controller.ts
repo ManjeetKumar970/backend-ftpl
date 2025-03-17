@@ -58,4 +58,12 @@ export class AuthController {
   async LoginRootUsers(@Param('id') id: string, @Body() body: LoginDto) {
     return this.authService.AdminLogin(body.email, body.password);
   }
+
+  @Post('forgot-password/change-password/admin/:id')
+  async adminChangePassword(
+    @Param('id') id: string,
+    @Body() body: { newPassword: string },
+  ) {
+    return this.authService.adminChangePassword(id, body.newPassword);
+  }
 }

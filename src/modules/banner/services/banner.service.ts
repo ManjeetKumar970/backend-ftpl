@@ -35,10 +35,28 @@ export class BannerService {
     return { message: 'Banner Created successfully' };
   }
 
-  async getBannerByUserId(): Promise<{ message: string | null; banners: any }> {
-    const response = await this.entityManager.query(`SELECT * FROM "banner"`);
-    const message = response.length === 0 ? 'No Banner' : null;
-    return { message: message, banners: response };
+  async getBannerAllBanner(
+    status?: boolean,
+  ): Promise<{ message: string | null; banners: any[] }> {
+    try {
+      let query = `SELECT * FROM "banner"`;
+      const params: any[] = [];
+
+      if (status !== undefined) {
+        query += ` WHERE is_active = $1`;
+        params.push(status);
+      }
+
+      const response = await this.entityManager.query(query, params);
+
+      return {
+        message: response.length === 0 ? 'No Banner' : null,
+        banners: response,
+      };
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+      throw new Error('Failed to fetch banners');
+    }
   }
 
   async deleteBannerByUserID(id: string): Promise<{ message: string }> {

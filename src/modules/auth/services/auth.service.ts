@@ -195,4 +195,23 @@ export class AuthService {
     );
     return { message: 'Password changed successfully' };
   }
+
+  async adminChangePassword(
+    id: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "id" = $1 AND user_role = $2 LIMIT 1`,
+      [id, Role?.ADMIN],
+    );
+    if (!user.length) {
+      throw new NotFoundException('User not found');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.entityManager.query(
+      `UPDATE "user" SET "password" = $1 WHERE "id" = $2 AND user_role = $3`,
+      [hashedPassword, id, Role?.ADMIN],
+    );
+    return { message: 'Password changed successfully' };
+  }
 }
