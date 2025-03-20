@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../strategies/jwt.strategy';
 import { MailService } from 'src/common/services/mail.services';
+import { JWTService } from '../services/jwt.service';
 
 import * as dotenv from 'dotenv';
 import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
@@ -18,8 +19,14 @@ dotenv.config();
       signOptions: { expiresIn: '30d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, MailService, JwtAdminAuthGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    MailService,
+    JwtAdminAuthGuard,
+    JWTService,
+  ],
   controllers: [AuthController],
-  exports: [AuthService, JwtAdminAuthGuard],
+  exports: [AuthService, JWTService, JwtAdminAuthGuard],
 })
 export class AuthModule {}

@@ -1,5 +1,6 @@
 import { Body, Controller, Param, Post, ValidationPipe } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
+import { JWTService } from '../services/jwt.service';
 
 // import DTO
 import { LoginDto } from '../dto/Login.dto';
@@ -9,7 +10,10 @@ import { sendForgotPasswordEmailDto } from '../dto/sendForgotPassword.dot';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JWTService,
+  ) {}
 
   @Post('login')
   async login(@Body(new ValidationPipe({ whitelist: true })) body: LoginDto) {
@@ -65,5 +69,10 @@ export class AuthController {
     @Body() body: { newPassword: string },
   ) {
     return this.authService.adminChangePassword(id, body.newPassword);
+  }
+
+  @Post('refresh-token')
+  async getNewToken(@Body() body: { refresh_token: string }) {
+    return this.jwtService.refreshToken(body.refresh_token);
   }
 }

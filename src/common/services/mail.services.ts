@@ -34,7 +34,6 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log(`Email sent to ${to}: ${info.messageId}`);
       return info;
     } catch (error) {
       console.error(`Error sending email to ${to}:`, error);
