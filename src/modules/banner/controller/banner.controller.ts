@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
@@ -13,11 +14,11 @@ import { CreateBannerDto } from '../dto/banner.dto';
 import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
 
 @Controller('banner')
-@UseGuards(JwtAdminAuthGuard)
 export class BannerController {
   constructor(private readonly bannerService: BannerService) {}
 
   @Post('')
+  @UseGuards(JwtAdminAuthGuard)
   async createBanner(
     @Body(new ValidationPipe({ whitelist: true })) body: CreateBannerDto,
   ) {
@@ -25,11 +26,12 @@ export class BannerController {
   }
 
   @Get('/')
-  async getBannerByUserId() {
-    return this.bannerService.getBannerByUserId();
+  async getBannerByUserId(@Query('status') status?: boolean) {
+    return this.bannerService.getBannerAllBanner(status);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAdminAuthGuard)
   async deleteBannerByUserID(@Param('id') id: string) {
     return this.bannerService.deleteBannerByUserID(id);
   }

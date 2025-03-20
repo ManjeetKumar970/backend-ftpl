@@ -4,7 +4,6 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -18,16 +17,19 @@ import {
   generateOtpEmail,
 } from '../../../utils/emailMessageText';
 import { Role } from 'src/enums/role.enum';
+import { JWTService } from './jwt.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectEntityManager() private readonly entityManager: EntityManager,
     private readonly mailService: MailService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: JWTService,
   ) {}
 
-  async signUp(body: registerDto): Promise<{ access_token: string }> {
+  async signUp(
+    body: registerDto,
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const existingUser = await this.entityManager.query(
       `SELECT * FROM "user" WHERE "email" = $1 OR "phoneNumber" = $2 LIMIT 1`,
       [body.email, body.phoneNumber],
@@ -48,18 +50,21 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
-    await this.entityManager.query(
-      `INSERT INTO "user" ("email", "password", "name", "phoneNumber") VALUES ($1, $2, $3, $4)`,
+    const user = await this.entityManager.query(
+      `INSERT INTO "user" ("email", "password", "name", "phoneNumber") VALUES ($1, $2, $3, $4) RETURNING id, email`,
       [body.email, hashedPassword, body.name, body.phoneNumber],
     );
 
     await this.entityManager.query(
-      `DELETE FROM "otp_verifications" WHERE email = $1`,
+      `DELETE FROM "otp_verifications" WHERE email = $1 `,
       [body.email],
     );
 
-    const payload = { email: body.email };
-    return { access_token: this.jwtService.sign(payload) };
+    const token = this.jwtService.generateTokens(user[0].id, body.email);
+    return {
+      access_token: (await token).accessToken,
+      refresh_token: (await token).refreshToken,
+    };
   }
 
   async adminSignUp(body: adminRegisterDto): Promise<{ access_token: string }> {
@@ -76,19 +81,19 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(body.password, 10);
 
-    await this.entityManager.query(
-      `INSERT INTO "user" ("email", "password", "name", "phoneNumber", "user_role") VALUES ($1, $2, $3, $4, $5)`,
+    const user = await this.entityManager.query(
+      `INSERT INTO "user" ("email", "password", "name", "phoneNumber", "user_role") VALUES ($1, $2, $3, $4, $5) RETURNING id, email`,
       [body.email, hashedPassword, body.name, body.phoneNumber, Role.ADMIN],
     );
 
-    const payload = { email: body.email };
-    return { access_token: this.jwtService.sign(payload) };
+    const token = this.jwtService.generateTokens(user[0].id, body.email);
+    return { access_token: (await token).accessToken };
   }
 
   async login(
     email: string,
     password: string,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const user = await this.entityManager.query(
       `SELECT * FROM "user" WHERE email = $1 AND user_role = $2 LIMIT 1`,
       [email, Role.USER],
@@ -96,11 +101,11 @@ export class AuthService {
     if (!user.length || !(await bcrypt.compare(password, user[0].password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    const token = this.jwtService.generateTokens(user[0].id, user[0].email);
     return {
-      access_token: this.jwtService.sign({
-        email: user[0].email,
-        id: user[0].id,
-      }),
+      access_token: (await token).accessToken,
+      refresh_token: (await token).refreshToken,
     };
   }
 
@@ -115,12 +120,9 @@ export class AuthService {
     if (!user.length || !(await bcrypt.compare(password, user[0].password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return {
-      access_token: this.jwtService.sign({
-        email: user[0].email,
-        id: user[0].id,
-      }),
-    };
+
+    const token = this.jwtService.generateTokens(user[0].id, email);
+    return { access_token: (await token).accessToken };
   }
 
   async userOTPRequest(email: string): Promise<{ otp_token: string }> {
@@ -192,6 +194,25 @@ export class AuthService {
     await this.entityManager.query(
       `UPDATE "user" SET "password" = $1 WHERE "id" = $2`,
       [hashedPassword, id],
+    );
+    return { message: 'Password changed successfully' };
+  }
+
+  async adminChangePassword(
+    id: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.entityManager.query(
+      `SELECT * FROM "user" WHERE "id" = $1 AND user_role = $2 LIMIT 1`,
+      [id, Role?.ADMIN],
+    );
+    if (!user.length) {
+      throw new NotFoundException('User not found');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.entityManager.query(
+      `UPDATE "user" SET "password" = $1 WHERE "id" = $2 AND user_role = $3`,
+      [hashedPassword, id, Role?.ADMIN],
     );
     return { message: 'Password changed successfully' };
   }
