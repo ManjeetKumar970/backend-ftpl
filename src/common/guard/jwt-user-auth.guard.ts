@@ -23,7 +23,10 @@ export class JwtUserAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+      throw new UnauthorizedException({
+        message: 'No token provided',
+        code: 'TOKEN_MISSING',
+      });
     }
 
     const token = authHeader.split(' ')[1];
@@ -47,8 +50,10 @@ export class JwtUserAuthGuard implements CanActivate {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException({
+        message: 'Invalid or expired token',
+        code: 'TOKEN_INVALID',
+      });
     }
   }
 }

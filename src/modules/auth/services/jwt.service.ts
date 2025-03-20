@@ -24,7 +24,7 @@ export class JWTService {
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.REFRESH_SECRET,
-      expiresIn: '5m',
+      expiresIn: '3m',
     });
 
     this.refreshTokens.set(userId, refreshToken);
