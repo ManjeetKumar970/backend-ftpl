@@ -33,7 +33,9 @@ export class JWTService {
   }
 
   // Validate Refresh Token and Generate New Access Token
-  async refreshToken(oldRefreshToken: string) {
+  async refreshToken(
+    oldRefreshToken: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
     try {
       // ✅ Use REFRESH_SECRET for validation
       const payload = this.jwtService.verify(oldRefreshToken, {
@@ -61,7 +63,10 @@ export class JWTService {
         payload.email,
       );
 
-      return newTokens;
+      return {
+        access_token: newTokens?.accessToken,
+        refresh_token: newTokens?.refreshToken,
+      };
     } catch (error) {
       console.error('Refresh token error:', error);
       throw new UnauthorizedException({
