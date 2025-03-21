@@ -12,6 +12,7 @@ import {
 import { BannerService } from '../services/banner.service';
 import { CreateBannerDto } from '../dto/banner.dto';
 import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
+import { JwtUserAuthGuard } from 'src/common/guard/jwt-user-auth.guard';
 
 @Controller('banner')
 export class BannerController {
@@ -26,6 +27,7 @@ export class BannerController {
   }
 
   @Get('/')
+  @UseGuards(JwtUserAuthGuard)
   async getBannerByUserId(@Query('status') status?: boolean) {
     return this.bannerService.getBannerAllBanner(status);
   }

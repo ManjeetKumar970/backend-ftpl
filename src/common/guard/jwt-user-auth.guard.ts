@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import { Role } from 'src/enums/role.enum';
 import { getUserById } from 'src/utils/user.utils';
-import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class JwtUserAuthGuard implements CanActivate {
@@ -32,27 +32,58 @@ export class JwtUserAuthGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      const decoded = this.jwtService.decode(token);
-      const userData = await getUserById(this.entityManager, decoded?.id);
+      // Decode the token without verifying the signature
+      const decoded: any = this.jwtService.decode(token);
+
+      if (!decoded || !decoded.userId) {
+        throw new UnauthorizedException({
+          message: 'Invalid token payload',
+          code: 'TOKEN_INVALID',
+        });
+      }
+
+      // Check if the token is expired
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        throw new UnauthorizedException({
+          status: 402,
+          message: 'Token has expired',
+          errorCode: 'TOKEN_EXPIRED',
+          timestamp: new Date().toISOString(),
+          path: context.switchToHttp().getRequest().url,
+        });
+      }
+
+      const userData = await getUserById(this.entityManager, decoded.userId);
 
       if (!userData) {
-        throw new UnauthorizedException('User not found');
+        throw new UnauthorizedException({
+          message: 'User not found',
+          code: 'USER_NOT_FOUND',
+        });
       }
 
       if (userData.user_role === Role.ADMIN) {
-        throw new ForbiddenException('Access denied: User only');
+        throw new ForbiddenException({
+          message: 'Access denied: User only',
+          code: 'ACCESS_DENIED',
+        });
       }
 
+      request.user = userData; // Attach user data to request
       return true;
     } catch (error) {
-      console.error('JwtAdminAuthGuard error:', error);
+      console.error('JwtUserAuthGuard error:', error);
 
-      if (error instanceof ForbiddenException) {
+      if (error instanceof UnauthorizedException) {
         throw error;
       }
+
       throw new UnauthorizedException({
-        message: 'Invalid or expired token',
-        code: 'TOKEN_INVALID',
+        statusCode: 402,
+        message: error.message || 'Invalid or expired token',
+        errorCode: 'TOKEN_INVALID',
+        timestamp: new Date().toISOString(),
+        path: context.switchToHttp().getRequest().url, // Include request path
       });
     }
   }
