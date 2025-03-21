@@ -64,7 +64,12 @@ export class JWTService {
       return newTokens;
     } catch (error) {
       console.error('Refresh token error:', error);
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException({
+        status: 402,
+        message: 'Token has expired',
+        errorCode: 'REFRESH_TOKEN_EXPIRED',
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 }
