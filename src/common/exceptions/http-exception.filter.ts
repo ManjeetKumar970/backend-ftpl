@@ -24,6 +24,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse = exception.getResponse();
     let errorMessage = 'Something went wrong';
     let errorType = 'Error';
+    let errorCode = 'UNKNOWN_ERROR';
+    let timestamp = new Date().toISOString();
+    let path = request.url;
 
     if (typeof exceptionResponse === 'string') {
       errorMessage = exceptionResponse;
@@ -31,10 +34,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       typeof exceptionResponse === 'object' &&
       exceptionResponse !== null
     ) {
-      const responseObj = exceptionResponse as {
-        message?: string | string[];
-        error?: string;
-      };
+      const responseObj = exceptionResponse as Record<string, any>;
 
       // Extract message: If it's an array, take the first element; otherwise, use it as a string
       if (
@@ -50,6 +50,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (responseObj.error) {
         errorType = responseObj.error;
       }
+
+      // Extract additional custom properties (if available)
+      if (responseObj.errorCode) {
+        errorCode = responseObj.errorCode;
+      }
+      if (responseObj.timestamp) {
+        timestamp = responseObj.timestamp;
+      }
+      if (responseObj.path) {
+        path = responseObj.path;
+      }
     }
 
     // Send JSON response
@@ -57,8 +68,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       error: errorType,
       statusCode: status,
       message: errorMessage,
-      timestamp: new Date().toISOString(),
-      path: request.url,
+      errorCode: errorCode,
+      timestamp: timestamp,
+      path: path,
     });
   }
 }

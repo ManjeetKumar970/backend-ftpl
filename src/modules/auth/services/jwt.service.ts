@@ -19,14 +19,15 @@ export class JWTService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: '1m',
+      expiresIn: '1m', // 1-minute expiration for testing
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.REFRESH_SECRET,
-      expiresIn: '5m',
+      expiresIn: '3m', // 3-minute expiration for testing
     });
 
+    // Store refresh token in memory
     this.refreshTokens.set(userId, refreshToken);
     return { accessToken, refreshToken };
   }
@@ -34,10 +35,12 @@ export class JWTService {
   // Validate Refresh Token and Generate New Access Token
   async refreshToken(oldRefreshToken: string) {
     try {
+      // ✅ Use REFRESH_SECRET for validation
       const payload = this.jwtService.verify(oldRefreshToken, {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.REFRESH_SECRET,
       });
 
+      // Check if refresh token exists and matches the stored one
       if (
         !this.refreshTokens.has(payload.userId) ||
         this.refreshTokens.get(payload.userId) !== oldRefreshToken
@@ -45,18 +48,23 @@ export class JWTService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
+      // Verify user still exists
       const userExists = await getUserById(this.entityManager, payload.userId);
       if (!userExists) {
-        throw new UnauthorizedException('Invalid refresh token.');
+        throw new UnauthorizedException('User not found.');
       }
 
+      // ✅ Remove old refresh token & issue new one
+      this.refreshTokens.delete(payload.userId);
       const newTokens = await this.generateTokens(
         payload.userId,
         payload.email,
       );
+
       return newTokens;
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 }
