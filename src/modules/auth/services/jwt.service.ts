@@ -19,12 +19,12 @@ export class JWTService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: '1m', // 1-minute expiration for testing
+      expiresIn: '30d',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.REFRESH_SECRET,
-      expiresIn: '3m', // 3-minute expiration for testing
+      expiresIn: '365d',
     });
 
     // Store refresh token in memory
