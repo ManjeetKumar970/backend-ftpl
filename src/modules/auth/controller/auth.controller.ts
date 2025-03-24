@@ -50,7 +50,7 @@ export class AuthController {
     return this.authService.changePassword(id, body.newPassword);
   }
 
-  @Post('sign-up/admin')
+  @Post('admin/sign-up')
   async createRootUsers(
     @Param('id') id: string,
     @Body() body: adminRegisterDto,
@@ -58,12 +58,12 @@ export class AuthController {
     return this.authService.adminSignUp(body);
   }
 
-  @Post('login/admin')
+  @Post('admin/login')
   async LoginRootUsers(@Body() body: LoginDto) {
     return this.authService.AdminLogin(body.email, body.password);
   }
 
-  @Post('forgot-password/change-password/admin/:id')
+  @Post('admin/forgot-password/change-password/:id')
   async adminChangePassword(
     @Param('id') id: string,
     @Body() body: { newPassword: string },
