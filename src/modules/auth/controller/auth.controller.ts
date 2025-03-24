@@ -3,7 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { JWTService } from '../services/jwt.service';
 
 // import DTO
-import { LoginDto } from '../dto/Login.dto';
+import { AdminLoginDto, LoginDto } from '../dto/Login.dto';
 import { OtpDto } from '../dto/otp.dto';
 import { adminRegisterDto, registerDto } from '../dto/register.dto';
 import { sendForgotPasswordEmailDto } from '../dto/sendForgotPassword.dot';
@@ -51,15 +51,12 @@ export class AuthController {
   }
 
   @Post('admin/sign-up')
-  async createRootUsers(
-    @Param('id') id: string,
-    @Body() body: adminRegisterDto,
-  ) {
+  async createRootUsers(@Body() body: adminRegisterDto) {
     return this.authService.adminSignUp(body);
   }
 
   @Post('admin/login')
-  async LoginRootUsers(@Body() body: LoginDto) {
+  async LoginRootUsers(@Body() body: AdminLoginDto) {
     return this.authService.AdminLogin(body.email, body.password);
   }
 
