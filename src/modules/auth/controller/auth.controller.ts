@@ -51,12 +51,16 @@ export class AuthController {
   }
 
   @Post('admin/sign-up')
-  async createRootUsers(@Body() body: adminRegisterDto) {
+  async createRootUsers(
+    @Body(new ValidationPipe({ whitelist: true })) body: adminRegisterDto,
+  ) {
     return this.authService.adminSignUp(body);
   }
 
   @Post('admin/login')
-  async LoginRootUsers(@Body() body: AdminLoginDto) {
+  async LoginRootUsers(
+    @Body(new ValidationPipe({ whitelist: true })) body: AdminLoginDto,
+  ) {
     return this.authService.AdminLogin(body.email, body.password);
   }
 
