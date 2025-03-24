@@ -7,7 +7,7 @@ import { OtpVerification } from './modules/auth/entities/otpVerification.entity'
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { BannerModule } from './modules/banner/module/banner.module';
-import { BannerController } from './modules/banner/controller/banner.controller';
+import { FileUploadModule } from './modules/file-upload/module/file-upload.module';
 
 @Module({
   imports: [
@@ -28,6 +28,7 @@ import { BannerController } from './modules/banner/controller/banner.controller'
     }),
     AuthModule,
     BannerModule,
+    FileUploadModule,
   ],
   providers: [
     {

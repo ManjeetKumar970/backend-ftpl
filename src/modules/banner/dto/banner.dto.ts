@@ -16,10 +16,9 @@ export class CreateBannerDto {
   @IsNotEmpty({ message: 'name is required.' })
   name: string;
 
-  @IsUrl({}, { message: 'image_link must be a valid URL.' })
-  @MaxLength(500, { message: 'image_link must not exceed 500 characters.' })
-  @IsNotEmpty({ message: 'image_link is required.' })
-  image_link: string;
+  @MaxLength(500, { message: 'file_id must not exceed 500 characters.' })
+  @IsNotEmpty({ message: 'file_id is required.' })
+  file_id: string;
 
   @IsString({ message: 'head_description must be a string.' })
   @IsNotEmpty({ message: 'head_description is required.' })

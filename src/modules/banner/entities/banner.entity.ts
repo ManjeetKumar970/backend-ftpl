@@ -18,7 +18,7 @@ export class Banner {
   name: string;
 
   @Column({ type: 'varchar', length: 500 })
-  image_link: string;
+  file_id: string;
 
   @Column({ type: 'text' })
   head_description: string;
