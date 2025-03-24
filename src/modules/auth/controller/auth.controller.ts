@@ -59,7 +59,7 @@ export class AuthController {
   }
 
   @Post('login/admin')
-  async LoginRootUsers(@Param('id') id: string, @Body() body: LoginDto) {
+  async LoginRootUsers(@Body() body: LoginDto) {
     return this.authService.AdminLogin(body.email, body.password);
   }
 
