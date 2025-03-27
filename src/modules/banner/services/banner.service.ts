@@ -15,9 +15,7 @@ export class BannerService {
     const userExists = await getUserById(this.entityManager, body.user_id);
 
     if (!userExists || userExists?.user_role !== Role.ADMIN) {
-      throw new UnauthorizedException(
-        'Access denied: Only administrators are authorized to perform this action.',
-      );
+      throw new UnauthorizedException('Access denied: Admins only');
     }
 
     await this.entityManager.query(

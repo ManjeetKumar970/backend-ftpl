@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './modules/auth/module/auth.module';
 import { User } from './modules/auth/entities/user.entity';
 import { OtpVerification } from './modules/auth/entities/otpVerification.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+
+// import Modules
+import { AuthModule } from './modules/auth/module/auth.module';
 import { BannerModule } from './modules/banner/module/banner.module';
-import { BannerController } from './modules/banner/controller/banner.controller';
 
 @Module({
   imports: [
