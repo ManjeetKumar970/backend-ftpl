@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { ProductCategoryService } from '../services/product-category.service';
@@ -15,6 +16,7 @@ import {
   CreateProductCategoryDto,
   UpdateProductCategoryDto,
 } from '../dto/product-category.dto';
+import { JwtAdminAuthGuard } from 'src/common/guard/jwt-admin-auth.guard';
 
 @Controller('product-category')
 export class ProductCategoryController {
@@ -23,6 +25,7 @@ export class ProductCategoryController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAdminAuthGuard)
   async createNewProductCategory(
     @Body(new ValidationPipe({ whitelist: true }))
     body: CreateProductCategoryDto,
@@ -40,6 +43,7 @@ export class ProductCategoryController {
   }
 
   @Patch('/:id')
+  @UseGuards(JwtAdminAuthGuard)
   async deleteUpdateCategory(
     @Param('id') id: string,
     @Body(new ValidationPipe({ whitelist: true }))
@@ -52,7 +56,8 @@ export class ProductCategoryController {
   }
 
   @Get('')
-  async getAllProductCategory(@Query('status') status?: boolean) {
+  @UseGuards(JwtAdminAuthGuard)
+  async getAllProductCategory(@Query('is_active') status?: boolean) {
     return await this.productCategoryService.getAllProductCategory(status);
   }
 }

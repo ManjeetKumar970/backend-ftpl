@@ -30,7 +30,7 @@ export class JwtAdminAuthGuard implements CanActivate {
 
     try {
       const decoded = this.jwtService.decode(token);
-      const userData = await getUserById(this.entityManager, decoded?.id);
+      const userData = await getUserById(this.entityManager, decoded?.userId);
 
       if (!userData) {
         throw new UnauthorizedException('User not found');
