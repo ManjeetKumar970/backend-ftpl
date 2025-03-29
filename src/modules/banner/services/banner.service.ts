@@ -12,6 +12,12 @@ export class BannerService {
   ) {}
 
   async createBanner(body: CreateBannerDto): Promise<{ message: string }> {
+    const userExists = await getUserById(this.entityManager, body.user_id);
+
+    if (!userExists || userExists?.user_role !== Role.ADMIN) {
+      throw new UnauthorizedException('Access denied: Admins only');
+    }
+    
     await this.entityManager.query(
       `INSERT INTO "banner" (user_id , name , file_id, head_description, sub_description, btn_link, is_active) VALUES ($1 , $2 , $3 , $4 , $5 , $6, $7)`,
       [
