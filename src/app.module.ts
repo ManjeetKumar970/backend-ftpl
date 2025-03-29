@@ -9,6 +9,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 // import Modules
 import { AuthModule } from './modules/auth/module/auth.module';
 import { BannerModule } from './modules/banner/module/banner.module';
+import { FileUploadModule } from './modules/file-upload/module/file-upload.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BannerModule } from './modules/banner/module/banner.module';
     }),
     AuthModule,
     BannerModule,
+    FileUploadModule,
   ],
   providers: [
     {
