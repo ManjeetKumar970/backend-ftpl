@@ -53,15 +53,6 @@ export class JwtAdminAuthGuard implements CanActivate {
         });
       }
 
-      const userData = await getUserById(this.entityManager, decoded.userId);
-      
-      if (!userData) {
-        throw new UnauthorizedException({
-          message: 'User not found',
-          code: 'USER_NOT_FOUND',
-        });
-      }
-
       if (userData.user_role === Role.USER) {
         throw new ForbiddenException({
           message: 'Access denied: User only',
