@@ -32,6 +32,15 @@ export class FileUploadService {
     }
   }
 
+  async deleteFileDetails(publicId: string): Promise<any> {
+    try {
+      await cloudinary.uploader.destroy(publicId);
+      return { message: 'File deleted successfully' };
+    } catch (error) {
+      throw new Error(`Cloudinary delete error: ${error.message}`);
+    }
+  }
+
   async getMultipleFileDetails(ids: any): Promise<any> {
     console.log(ids);
     try {
