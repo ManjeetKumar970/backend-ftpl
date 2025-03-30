@@ -10,6 +10,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AuthModule } from './modules/auth/module/auth.module';
 import { BannerModule } from './modules/banner/module/banner.module';
 import { ProductCategoryModule } from './modules/product-category/module/product-category.module';
+import { FileUploadModule } from './modules/file-upload/module/file-upload.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ProductCategoryModule } from './modules/product-category/module/product
     AuthModule,
     BannerModule,
     ProductCategoryModule,
+    FileUploadModule,
   ],
   providers: [
     {

@@ -23,32 +23,68 @@ export class JwtAdminAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+      throw new UnauthorizedException({
+        message: 'No token provided',
+        code: 'TOKEN_MISSING',
+      });
     }
 
     const token = authHeader.split(' ')[1];
 
     try {
+      // Decode the token without verifying the signature
       const decoded = this.jwtService.decode(token);
       const userData = await getUserById(this.entityManager, decoded?.userId);
+      if (!decoded || !decoded.userId) {
+        throw new UnauthorizedException({
+          message: 'Invalid token payload',
+          code: 'TOKEN_INVALID',
+        });
+      }
 
+      // Check if the token is expired
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        throw new UnauthorizedException({
+          status: 402,
+          message: 'Token has expired',
+          errorCode: 'TOKEN_EXPIRED',
+          timestamp: new Date().toISOString(),
+          path: context.switchToHttp().getRequest().url,
+        });
+      }
+
+      const userData = await getUserById(this.entityManager, decoded.userId);
+      
       if (!userData) {
-        throw new UnauthorizedException('User not found');
+        throw new UnauthorizedException({
+          message: 'User not found',
+          code: 'USER_NOT_FOUND',
+        });
       }
 
       if (userData.user_role === Role.USER) {
-        throw new ForbiddenException('Access denied: Admins only');
+        throw new ForbiddenException({
+          message: 'Access denied: User only',
+          code: 'ACCESS_DENIED',
+        });
       }
 
+      request.user = userData; // Attach user data to request
       return true;
     } catch (error) {
-      console.error('JwtAdminAuthGuard error:', error);
+      console.error('JwtUserAuthGuard error:', error);
 
-      if (error instanceof ForbiddenException) {
+      if (error instanceof UnauthorizedException) {
         throw error;
       }
 
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException({
+        statusCode: 402,
+        message: error.message || 'Invalid or expired token',
+        errorCode: 'TOKEN_INVALID',
+        timestamp: new Date().toISOString(),
+        path: context.switchToHttp().getRequest().url, // Include request path
+      });
     }
   }
 }
