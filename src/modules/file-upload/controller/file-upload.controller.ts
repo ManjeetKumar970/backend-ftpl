@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   ValidationPipe,
+  Delete,
 } from '@nestjs/common';
 import { Multer } from 'multer';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -25,6 +26,11 @@ export class FileUploadController {
   @Get('/:public_id')
   async getFileDetails(@Param('public_id') public_id: string) {
     return this.fileUploadService.getFileDetails(public_id);
+  }
+
+  @Delete('/:public_id')
+  async deleteFileDetails(@Param('public_id') public_id: string) {
+    return this.fileUploadService.deleteFileDetails(public_id);
   }
 
   @Post('/all')
