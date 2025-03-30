@@ -33,8 +33,8 @@ export class JwtAdminAuthGuard implements CanActivate {
 
     try {
       // Decode the token without verifying the signature
-      const decoded: any = this.jwtService.decode(token);
-
+      const decoded = this.jwtService.decode(token);
+      const userData = await getUserById(this.entityManager, decoded?.userId);
       if (!decoded || !decoded.userId) {
         throw new UnauthorizedException({
           message: 'Invalid token payload',
@@ -54,7 +54,7 @@ export class JwtAdminAuthGuard implements CanActivate {
       }
 
       const userData = await getUserById(this.entityManager, decoded.userId);
-
+      
       if (!userData) {
         throw new UnauthorizedException({
           message: 'User not found',
