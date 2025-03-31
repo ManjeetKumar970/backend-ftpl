@@ -1,7 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { CreateBannerDto } from '../dto/banner.dto';
+import { CreateBannerDto, UpdateBannerDto } from '../dto/banner.dto';
 import { FileUploadService } from 'src/modules/file-upload/services/file-upload.service';
 import { getUserById } from 'src/utils/user.utils';
 import { Role } from 'src/enums/role.enum';
@@ -48,31 +52,29 @@ export class BannerService {
   }
 
   async updateBanner(
-    body: CreateBannerDto,
-    authHeader: string,
+    banner_id: string,
+    body: UpdateBannerDto,
   ): Promise<{ message: string }> {
     try {
-      const token = authHeader.split(' ')[1];
-      const decoded: any = this.jwtService.decode(token);
-
-      const userExists = await getUserById(this.entityManager, decoded.userId);
-
-      if (!userExists || userExists?.user_role !== Role.ADMIN) {
-        throw new UnauthorizedException('Access denied: Admins only');
-      }
-
       await this.entityManager.query(
-        `UPDATE "banner" SET name = $1, file_id = $2, head_description = $3, sub_description = $4, btn_link = $5, is_active = $6`,
+        `UPDATE "banner" SET 
+        name = $1, 
+        file_id = $2, 
+        head_description = $3, 
+        sub_description = $4, 
+        btn_link = $5 
+        WHERE id = $6`,
         [
           body.name,
           body.file_id,
           body.head_description,
           body.sub_description,
           body.btn_link,
-          true,
+          banner_id,
         ],
       );
-      return { message: 'Banner Created successfully' };
+
+      return { message: 'Banner updated successfully' };
     } catch (error) {
       throw error;
     }
@@ -89,6 +91,8 @@ export class BannerService {
         query += ` WHERE is_active = $1`;
         params.push(status);
       }
+
+      query += ` ORDER BY updated_at`;
       const response = await this.entityManager.query(query, params);
 
       if (response?.length < 1) {
@@ -122,20 +126,35 @@ export class BannerService {
         banners: banners,
       };
     } catch (error) {
-      console.error('Error fetching banners:', error);
-      throw new Error('Failed to fetch banners');
+      throw error;
     }
   }
 
-  async deleteBannerByUserID(id: string): Promise<{ message: string }> {
-    try {
-      await this.entityManager.query(
-        'UPDATE "banner" SET is_active = $2 WHERE id = $1',
-        [id, false],
-      );
-      return { message: 'Banner Deleted successfully' };
-    } catch (error) {
-      throw error;
-    }
+  async deleteBanner(id: string): Promise<{ message: string }> {
+    return this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        try {
+          const [existingBanner] = await transactionalEntityManager.query(
+            'SELECT * FROM "banner" WHERE id = $1 AND is_active = true FOR UPDATE',
+            [id],
+          );
+
+          if (!existingBanner) {
+            throw new NotFoundException('Banner not found or already deleted');
+          }
+
+          await this.fileUploadService.deleteFileDetails(
+            existingBanner?.file_id,
+          );
+          await transactionalEntityManager.query(
+            'UPDATE "banner" SET is_active = $2 WHERE id = $1',
+            [id, false],
+          );
+          return { message: 'Banner Deleted successfully' };
+        } catch (error) {
+          throw error;
+        }
+      },
+    );
   }
 }
