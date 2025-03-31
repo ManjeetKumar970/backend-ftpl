@@ -1,14 +1,9 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { CreateBannerDto, UpdateBannerDto } from '../dto/banner.dto';
 import { FileUploadService } from 'src/modules/file-upload/services/file-upload.service';
 import { getUserById } from 'src/utils/user.utils';
-import { Role } from 'src/enums/role.enum';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -26,12 +21,6 @@ export class BannerService {
     try {
       const token = authHeader.split(' ')[1];
       const decoded: any = this.jwtService.decode(token);
-
-      const userExists = await getUserById(this.entityManager, decoded.userId);
-
-      if (!userExists || userExists?.user_role !== Role.ADMIN) {
-        throw new UnauthorizedException('Access denied: Admins only');
-      }
 
       await this.entityManager.query(
         `INSERT INTO "banner" (user_id , name , file_id, head_description, sub_description, btn_link, is_active) VALUES ($1 , $2 , $3 , $4 , $5 , $6, $7)`,

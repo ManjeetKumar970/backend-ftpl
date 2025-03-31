@@ -55,7 +55,7 @@ export class JwtAdminAuthGuard implements CanActivate {
 
       if (userData.user_role === Role.USER) {
         throw new ForbiddenException({
-          message: 'Access denied: User only',
+          message: 'Access denied: Admin only',
           code: 'ACCESS_DENIED',
         });
       }
