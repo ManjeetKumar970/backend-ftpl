@@ -40,8 +40,14 @@ export class BannerController {
 
   @Get('')
   @UseGuards(JwtCommonAuthGuard)
-  async getBannerByUserId(@Query('status') status?: boolean) {
+  async getBanner(@Query('status') status?: boolean) {
     return this.bannerService.getBannerAllBanner(status);
+  }
+
+  @Get('/:id')
+  @UseGuards(JwtCommonAuthGuard)
+  async getBannerByUserId(@Param('id') id: string) {
+    return this.bannerService.getBannerById(id);
   }
 
   @Delete(':id')
