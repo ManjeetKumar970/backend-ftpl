@@ -100,6 +100,7 @@ export class BannerService {
         sub_description: response?.sub_description,
         btn_link: response?.btn_link,
         file_info: {
+          file_id: fileInfo?.public_id,
           file_name: fileInfo?.display_name,
           file_url: fileInfo?.url,
         },
