@@ -9,12 +9,17 @@ export class FileUploadService {
   ): Promise<{ message: string; uploaded_file: any }> {
     const uploadPromises = files.map((file) => {
       return new Promise<any>((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream((error, result) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            display_name: file.originalname.split('.')[0],
+            resource_type: 'auto',
+          },
+          (error, result) => {
             if (error) return reject(error);
             resolve(result);
-          })
-          .end(file.buffer);
+          },
+        );
+        uploadStream.end(file.buffer);
       });
     });
     return {

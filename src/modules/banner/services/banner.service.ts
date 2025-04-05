@@ -69,6 +69,46 @@ export class BannerService {
     }
   }
 
+  async getBannerById(banner_id: string): Promise<{
+    id: string;
+    name: string;
+    file_info?: any;
+    head_description: string;
+    sub_description: string;
+    btn_link: {
+      file_name: string;
+      file_url: string;
+    };
+  }> {
+    try {
+      const [response] = await this.entityManager.query(
+        'SELECT * FROM "banner" WHERE id = $1 AND is_active = true',
+        [banner_id],
+      );
+
+      if (!response) {
+        throw new NotFoundException('No active banner found');
+      }
+
+      const fileInfo = await this.fileUploadService.getFileDetails(
+        response?.file_id,
+      );
+      return {
+        id: response?.id,
+        name: response?.name,
+        head_description: response?.head_description,
+        sub_description: response?.sub_description,
+        btn_link: response?.btn_link,
+        file_info: {
+          file_name: fileInfo?.display_name,
+          file_url: fileInfo?.url,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getBannerAllBanner(
     status?: boolean,
   ): Promise<{ message: string | null; banners: any[] }> {
