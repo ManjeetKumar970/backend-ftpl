@@ -60,4 +60,10 @@ export class ProductCategoryController {
   async getAllProductCategory(@Query('is_active') status?: boolean) {
     return await this.productCategoryService.getAllProductCategory(status);
   }
+
+  @Get(':id')
+  @UseGuards(JwtAdminAuthGuard)
+  async getSingleProductCategory(@Param('id') id: string) {
+    return await this.productCategoryService.getSingleProductCategory(id);
+  }
 }

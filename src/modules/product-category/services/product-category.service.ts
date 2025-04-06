@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { CreateProductCategoryDto } from '../dto/product-category.dto';
@@ -71,7 +76,7 @@ export class ProductCategoryService {
         [category_id],
       );
 
-      if (category?.id) {
+      if (!category?.id) {
         throw new HttpException(
           'Category not found. Invalid category ID.',
           HttpStatus.NOT_FOUND,
@@ -117,6 +122,28 @@ export class ProductCategoryService {
       return {
         message: response.length === 0 ? 'No category' : null,
         category: response,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getSingleProductCategory(
+    id: string,
+  ): Promise<{ id: string; name: string }> {
+    try {
+      const [response] = await this.entityManager.query(
+        'SELECT * FROM "category" WHERE id = $1 AND is_active = true',
+        [id],
+      );
+
+      if (!response) {
+        throw new NotFoundException('No active Category found');
+      }
+
+      return {
+        id: response?.id,
+        name: response?.name,
       };
     } catch (error) {
       throw error;
